@@ -1,3 +1,3 @@
 # POLISH VERSION
-projekt aplikacji to do robiony w 3 osobowej grupie
+projekt aplikacji "to do" robiony w 3 osobowej grupie
 
