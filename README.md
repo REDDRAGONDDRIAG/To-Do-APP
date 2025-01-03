@@ -1,4 +1,4 @@
 # POLISH VERSION
 projekt aplikacji "to do" robiony w 3 osobowej grupie
 
-# ENLISCH VERSION
+# ENGLISCH VERSION
