@@ -3,18 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>To-Do App</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>To-Do Application with Priority</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #333;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      width: 400px;
+      text-align: center;
+    }
+
+    .container h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"], select {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: #444;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .priority-p1 { border-left: 5px solid #ff4c4c; }
+    .priority-p2 { border-left: 5px solid #ff924c; }
+    .priority-p3 { border-left: 5px solid #ffcc4c; }
+    .priority-p4 { border-left: 5px solid #94ff4c; }
+    .priority-p5 { border-left: 5px solid #4cff4c; }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>To-Do Application</h1>
-    <form id="task-form">
-      <input type="text" id="task-input" placeholder="Enter a new task" required>
-      <button type="submit">Add Task</button>
-    </form>
-    <ul id="task-list"></ul>
+    <input type="text" id="taskInput" placeholder="Enter your task">
+    <select id="prioritySelect">
+      <option value="1">P1 (Highest Priority)</option>
+      <option value="2">P2</option>
+      <option value="3">P3</option>
+      <option value="4">P4</option>
+      <option value="5">P5 (Lowest Priority)</option>
+    </select>
+    <button onclick="addTask()">Add Task</button>
+    <ul id="taskList"></ul>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    const tasks = [];
+
+    function addTask() {
+      const taskInput = document.getElementById('taskInput');
+      const prioritySelect = document.getElementById('prioritySelect');
+      const taskList = document.getElementById('taskList');
+
+      const taskText = taskInput.value.trim();
+      const taskPriority = prioritySelect.value;
+
+      if (!taskText) {
+        alert('Please enter a task.');
+        return;
+      }
+
+      // Add the new task to the tasks array
+      tasks.push({ text: taskText, priority: parseInt(taskPriority) });
+
+      // Sort tasks by priority (ascending)
+      tasks.sort((a, b) => a.priority - b.priority);
+
+      // Clear input field
+      taskInput.value = '';
+
+      // Render tasks
+      renderTasks(taskList);
+    }
+
+    function renderTasks(taskList) {
+      // Clear the existing tasks
+      taskList.innerHTML = '';
+
+      // Add sorted tasks to the list
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.textContent = `${task.text} (P${task.priority})`;
+        li.className = `priority-p${task.priority}`;
+        taskList.appendChild(li);
+      });
+    }
+  </script>
 </body>
 </html>
