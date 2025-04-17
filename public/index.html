@@ -4,6 +4,84 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>To-Do Application with Calendar</title>
+  <script type="module">
+    //For Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { firebaseConfig } from './backend/Config.js';
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const tasksCollection = collection(db, "tasks");
+
+    const taskInput = document.getElementById('taskInput');
+    const prioritySelect = document.getElementById('prioritySelect');
+    const taskDate = document.getElementById('taskDate');
+    const taskList = document.getElementById('taskList');
+
+    async function addTask() {
+      const taskText = taskInput.value.trim();
+      const taskPriority = parseInt(prioritySelect.value);
+      const taskDueDate = taskDate.value;
+
+      if (!taskText) return alert('Please enter a task.');
+      if (!taskDueDate) return alert('Please select a date.');
+
+      try {
+        await addDoc(tasksCollection, {
+          text: taskText,
+          priority: taskPriority,
+          dueDate: taskDueDate
+        });
+        taskInput.value = '';
+        taskDate.value = '';
+        fetchTasks();
+      } catch (error) {
+        console.error("Error adding task:", error);
+      }
+    }
+
+    async function deleteTask(id) {
+      try {
+        await deleteDoc(doc(db, "tasks", id));
+        fetchTasks();
+      } catch (error) {
+        console.error("Error deleting task:", error);
+      }
+    }
+
+    async function fetchTasks() {
+      taskList.innerHTML = '';
+      const querySnapshot = await getDocs(tasksCollection);
+      const tasks = [];
+
+      querySnapshot.forEach(doc => {
+        tasks.push({ id: doc.id, ...doc.data() });
+      });
+
+      tasks.sort((a, b) => {
+        if (a.dueDate === b.dueDate) return a.priority - b.priority;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = `priority-p${task.priority}`;
+        li.innerHTML = `
+          ${task.text} (P${task.priority}) - ${task.dueDate}
+          <button class="delete-btn" onclick="deleteTask('${task.id}')">Delete</button>
+        `;
+        taskList.appendChild(li);
+      });
+    }
+
+    window.addTask = addTask;
+    window.deleteTask = deleteTask;
+
+    // Initial fetch
+    fetchTasks();
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;
