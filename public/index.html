@@ -6,21 +6,36 @@
   <title>To-Do Application with Calendar</title>
   <script type="module">
     //For Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-    import { firebaseConfig } from './backend/Config.js';
+    import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { db, auth, googleAuthProvider } from './Config.js';
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const tasksCollection = collection(db, "tasks");
+    let currentUser = null;
+
+    async function signIn() {
+      try {
+        const result = await signInWithPopup(auth, googleAuthProvider);
+        currentUser = result.user;
+        console.log("Signed in as:", currentUser.displayName);
+        fetchTasks();
+      } catch (error) {
+        console.error("Authentication failed:", error);
+      }
+    }
 
     const taskInput = document.getElementById('taskInput');
     const prioritySelect = document.getElementById('prioritySelect');
     const taskDate = document.getElementById('taskDate');
     const taskList = document.getElementById('taskList');
 
+    const tasksCollection = collection(db, "tasks");
+
     async function addTask() {
+      if (!currentUser) {
+        alert("Please sign in first.");
+        return;
+      }
+
       const taskText = taskInput.value.trim();
       const taskPriority = parseInt(prioritySelect.value);
       const taskDueDate = taskDate.value;
@@ -32,7 +47,8 @@
         await addDoc(tasksCollection, {
           text: taskText,
           priority: taskPriority,
-          dueDate: taskDueDate
+          dueDate: taskDueDate,
+          userId: currentUser.uid // 🔐 add user ID to match your rules
         });
         taskInput.value = '';
         taskDate.value = '';
@@ -57,7 +73,10 @@
       const tasks = [];
 
       querySnapshot.forEach(doc => {
-        tasks.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        if (data.userId === currentUser?.uid) {
+          tasks.push({ id: doc.id, ...data });
+        }
       });
 
       tasks.sort((a, b) => {
@@ -76,11 +95,11 @@
       });
     }
 
+    // Trigger sign-in on page load
+    signIn();
+
     window.addTask = addTask;
     window.deleteTask = deleteTask;
-
-    // Initial fetch
-    fetchTasks();
   </script>
   <style>
     body {
@@ -180,10 +199,10 @@
     <ul id="taskList"></ul>
   </div>
 
-  <script>
+  <script>/*
     const tasks = [];
 
-    function addTask() {
+    function addTaskFront() {
       const taskInput = document.getElementById('taskInput');
       const prioritySelect = document.getElementById('prioritySelect');
       const taskDate = document.getElementById('taskDate');
@@ -241,7 +260,7 @@
         `;
         taskList.appendChild(li);
       });
-    }
+    }*/
   </script>
 </body>
 </html>
