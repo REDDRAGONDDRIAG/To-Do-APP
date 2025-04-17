@@ -95,8 +95,7 @@
       });
     }
 
-    // Trigger sign-in on page load
-    signIn();
+    
 
     window.addTask = addTask;
     window.deleteTask = deleteTask;
@@ -195,11 +194,11 @@
       <option value="5">P5 (Lowest Priority)</option>
     </select>
     <input type="date" id="taskDate">
-    <button onclick="addTask()">Add Task</button>
+    <button onclick="addTaskFront(), addTask()">Add Task</button>
     <ul id="taskList"></ul>
   </div>
 
-  <script>/*
+  <script>
     const tasks = [];
 
     function addTaskFront() {
@@ -260,7 +259,7 @@
         `;
         taskList.appendChild(li);
       });
-    }*/
+    }
   </script>
 </body>
 </html>
