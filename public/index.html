@@ -20,9 +20,10 @@
     <input type="date" id="taskDate">
     <button onclick="addTaskBack(), addTaskFront()">Add Task</button>
     <ul id="taskList"></ul>
-    <button id="theme-toggle">Zmień motyw</button>
+    <button id="theme-toggle" onclick="changeTheme()">Change Theme</button>
     <button onclick="signIn()">SignIn</button>
   </div>
+  <script src="changeTheme.js"></script>
   <script type="module" src="FrontEndTaskManage.js"></script>
   <script type="module" src="BackEndTaskManage.js"></script>
 </body>
