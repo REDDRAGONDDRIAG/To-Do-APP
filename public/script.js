@@ -9,10 +9,12 @@ const taskList = document.getElementById("task-list");
 const fetchTasks = async () => {
     try {
         const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const tasks = await response.json();
         renderTasks(tasks);
     } catch (error) {
-        console.error("Failed to fetch tasks", error);
+        console.error("Failed to fetch tasks:", error);
+        alert("Nie udało się pobrać zadań. Upewnij się, że backend działa na porcie 3000.");
     }
 };
 
