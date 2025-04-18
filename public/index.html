@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>To-Do Application with Calendar</title>
+
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" rel="stylesheet" />
+
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.js"></script>
+
+  <!-- Firebase -->
   <script type="module">
-    //For Firebase
     import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
     import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
     import { db, auth, googleAuthProvider } from './Config.js';
 
     let currentUser = null;
+    let calendar;
 
     async function signIn() {
       try {
@@ -48,7 +57,7 @@
           text: taskText,
           priority: taskPriority,
           dueDate: taskDueDate,
-          userId: currentUser.uid // 🔐 add user ID to match your rules
+          userId: currentUser.uid
         });
         taskInput.value = '';
         taskDate.value = '';
@@ -93,13 +102,51 @@
         `;
         taskList.appendChild(li);
       });
+
+      renderCalendar(tasks);
     }
 
-    
+    function renderCalendar(tasks) {
+      if (calendar) calendar.destroy();
+
+      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        height: 500,
+        events: tasks.map(task => ({
+          title: task.text,
+          date: task.dueDate,
+          color: getPriorityColor(task.priority)
+        }))
+      });
+
+      calendar.render();
+    }
+
+    function getPriorityColor(priority) {
+      const colors = {
+        1: '#ff4c4c',
+        2: '#ff924c',
+        3: '#ffcc4c',
+        4: '#94ff4c',
+        5: '#4cff4c'
+      };
+      return colors[priority] || '#ffffff';
+    }
+
+    function switchTab(tab) {
+      document.getElementById('list-view').style.display = tab === 'list' ? 'block' : 'none';
+      document.getElementById('calendar-view').style.display = tab === 'calendar' ? 'block' : 'none';
+
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+    }
 
     window.addTask = addTask;
     window.deleteTask = deleteTask;
+    window.switchTab = switchTab;
+    window.signIn = signIn;
   </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -117,13 +164,12 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-      width: 400px;
+      width: 420px;
       text-align: center;
     }
 
-    .container h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
+    h1 {
+      margin-bottom: 10px;
     }
 
     input[type="text"], select, input[type="date"] {
@@ -180,86 +226,58 @@
     .delete-btn:hover {
       background-color: #b30000;
     }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .tab-btn {
+      background-color: #555;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 0 5px;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .tab-btn.active {
+      background-color: #007bff;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>To-Do Application</h1>
-    <input type="text" id="taskInput" placeholder="Enter your task">
-    <select id="prioritySelect">
-      <option value="1">P1 (Highest Priority)</option>
-      <option value="2">P2</option>
-      <option value="3">P3</option>
-      <option value="4">P4</option>
-      <option value="5">P5 (Lowest Priority)</option>
-    </select>
-    <input type="date" id="taskDate">
-    <button onclick="addTaskFront(), addTask()">Add Task</button>
-    <ul id="taskList"></ul>
+    <button onclick="signIn()">Sign In with Google</button>
+
+    <!-- Zakładki -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('list')">Lista</button>
+      <button class="tab-btn" onclick="switchTab('calendar')">Kalendarz</button>
+    </div>
+
+    <!-- Widok listy -->
+    <div id="list-view">
+      <input type="text" id="taskInput" placeholder="Enter your task" autofocus>
+      <select id="prioritySelect">
+        <option value="1">P1 (Highest Priority)</option>
+        <option value="2">P2</option>
+        <option value="3">P3</option>
+        <option value="4">P4</option>
+        <option value="5">P5 (Lowest Priority)</option>
+      </select>
+      <input type="date" id="taskDate">
+      <button onclick="addTask()">Add Task</button>
+      <ul id="taskList"></ul>
+    </div>
+
+    <!-- Widok kalendarza -->
+    <div id="calendar-view" style="display: none;">
+      <div id="calendar"></div>
+    </div>
   </div>
-
-  <script>
-    const tasks = [];
-
-    function addTaskFront() {
-      const taskInput = document.getElementById('taskInput');
-      const prioritySelect = document.getElementById('prioritySelect');
-      const taskDate = document.getElementById('taskDate');
-      const taskList = document.getElementById('taskList');
-
-      const taskText = taskInput.value.trim();
-      const taskPriority = prioritySelect.value;
-      const taskDueDate = taskDate.value;
-
-      if (!taskText) {
-        alert('Please enter a task.');
-        return;
-      }
-
-      if (!taskDueDate) {
-        alert('Please select a date.');
-        return;
-      }
-
-      // Add the new task to the tasks array
-      tasks.push({ text: taskText, priority: parseInt(taskPriority), dueDate: taskDueDate });
-
-      // Sort tasks by priority and date
-      tasks.sort((a, b) => {
-        if (a.dueDate === b.dueDate) {
-          return a.priority - b.priority;
-        }
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-
-      // Clear input field
-      taskInput.value = '';
-      taskDate.value = '';
-
-      // Render tasks
-      renderTasks(taskList);
-    }
-
-    function deleteTask(index) {
-      tasks.splice(index, 1); // Remove the task at the specified index
-      renderTasks(document.getElementById('taskList')); // Re-render the task list
-    }
-
-    function renderTasks(taskList) {
-      // Clear the existing tasks
-      taskList.innerHTML = '';
-
-      // Add sorted tasks to the list
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.className = `priority-p${task.priority}`;
-        li.innerHTML = `
-          ${task.text} (P${task.priority}) - ${task.dueDate}
-          <button class="delete-btn" onclick="deleteTask(${index})">Delete</button>
-        `;
-        taskList.appendChild(li);
-      });
-    }
-  </script>
 </body>
 </html>

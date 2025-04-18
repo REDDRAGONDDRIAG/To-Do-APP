@@ -92,3 +92,36 @@ const deleteTask = async (taskId) => {
 
 // Initial fetch
 fetchTasks();
+
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: async function (fetchInfo, successCallback, failureCallback) {
+            try {
+                const response = await fetch(API_URL); // Pobierz zadania z backendu
+                const tasks = await response.json();
+
+                // Mapuj zadania na wydarzenia kalendarza
+                const events = tasks.map(task => ({
+                    title: task.name,
+                    start: task.dueDate,
+                    id: task.id,
+                }));
+
+                successCallback(events);
+            } catch (error) {
+                console.error('Failed to fetch tasks for calendar', error);
+                failureCallback(error);
+            }
+        },
+        eventClick: function (info) {
+            if (confirm(`Czy na pewno chcesz usunąć zadanie "${info.event.title}"?`)) {
+                deleteTask(info.event.id); // Usuń zadanie po kliknięciu
+            }
+        },
+    });
+
+    calendar.render();
+});
