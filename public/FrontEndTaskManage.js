@@ -55,7 +55,7 @@ function renderTasks(taskList) {
         li.className = `priority-p${task.priority}`;
         li.innerHTML = `
             ${task.text} (P${task.priority}) - ${task.dueDate}
-            <button class="delete-btn" onclick="deleteTaskFront(${index})">Delete</button>
+            <button class="delete-btn" onclick="deleteTaskBack(${index}), deleteTaskFront(${index})">Delete</button>
         `;
         taskList.appendChild(li);
     });

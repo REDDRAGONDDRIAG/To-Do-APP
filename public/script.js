@@ -31,7 +31,7 @@ const renderTasks = (tasks) => {
                 <button onclick="toggleComplete(${task.id}, ${!task.completed})">
                     ${task.completed ? "Undo" : "Complete"}
                 </button>
-                <button onclick="deleteTask(${task.id})">Delete</button>
+                <button onclick="deleteTaskBack(${task.id}), deleteTaskFront(${task.id})">Delete</button>
             </div>
         `;
         taskList.appendChild(taskItem);

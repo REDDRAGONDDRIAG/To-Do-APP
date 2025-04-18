@@ -28,9 +28,21 @@ async function addTaskBack() {
         return;
     }
 
+    const taskInput = document.getElementById('taskInput');
+    console.log(taskInput);
+    const prioritySelect = document.getElementById('prioritySelect');
+    console.log(prioritySelect);
+    const taskDate = document.getElementById('taskDate');
+    console.log(taskDate);
+
     const taskText = taskInput.value.trim();
+    console.log(taskText);
     const taskPriority = parseInt(prioritySelect.value);
+    console.log(taskPriority);
     const taskDueDate = taskDate.value;
+    console.log(taskDueDate);
+
+    console.warn("sdss");
 
     if (!taskText) return alert('Please enter a task.');
     if (!taskDueDate) return alert('Please select a date.');
@@ -81,7 +93,7 @@ async function fetchTasks() {
         li.className = `priority-p${task.priority}`;
         li.innerHTML = `
             ${task.text} (P${task.priority}) - ${task.dueDate}
-            <button class="delete-btn" onclick="deleteTask('${task.id}')">Delete</button>
+            <button class="delete-btn" onclick="deleteTaskBack('${task.id}')">Delete</button>
         `;
         taskList.appendChild(li);
     });
