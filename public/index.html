@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <title>To-Do Application with Calendar</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -25,5 +27,17 @@
   </div>
   <script type="module" src="FrontEndTaskManage.js"></script>
   <script type="module" src="BackEndTaskManage.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log("✅ Service Worker zarejestrowany:", registration);
+        })
+        .catch(err => {
+          console.error("❌ Błąd rejestracji Service Workera:", err);
+        });
+    }
+  </script>
+  
 </body>
 </html>

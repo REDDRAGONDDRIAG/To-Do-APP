@@ -1,23 +1,58 @@
 import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 import { db, auth, googleAuthProvider } from './Config.js';
+import { messaging } from './Config.js';
+import { getToken } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js";
+import { getRedirectResult, signInWithRedirect } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
 
 let currentUser = null;
 
+// async function signIn() {
+//     try {
+//         const result = await signInWithPopup(auth, googleAuthProvider);
+//         currentUser = result.user;
+//         await requestPermissionAndSaveToken(currentUser.uid);
+//         console.log("Signed in as:", currentUser.displayName);
+//         fetchTasks();
+//     } catch (error) {
+//         console.error("Authentication failed:", error);
+//     }
+// }
 async function signIn() {
     try {
         const result = await signInWithPopup(auth, googleAuthProvider);
         currentUser = result.user;
+        await requestPermissionAndSaveToken(currentUser.uid);
         console.log("Signed in as:", currentUser.displayName);
         fetchTasks();
     } catch (error) {
         console.error("Authentication failed:", error);
+        alert('Nie udało się zalogować. Spróbuj ponownie!');
     }
 }
 
-const taskInput = document.getElementById('taskInput');
-const prioritySelect = document.getElementById('prioritySelect');
-const taskDate = document.getElementById('taskDate');
+async function handleRedirectResult() {
+    try {
+        const result = await getRedirectResult(auth);
+
+        if (result) {
+            currentUser = result.user;
+            console.log("Signed in as:", currentUser.displayName);
+            
+            await requestPermissionAndSaveToken(currentUser.uid);
+            
+            fetchTasks();
+        } else {
+            console.log("Nie znaleziono wyników logowania.");
+        }
+    } catch (error) {
+        console.error("Błąd podczas logowania po przekierowaniu:", error);
+    }
+}
+
+handleRedirectResult();
+
 const taskList = document.getElementById('taskList');
 
 const tasksCollection = collection(db, "tasks");
@@ -98,6 +133,32 @@ async function fetchTasks() {
         taskList.appendChild(li);
     });
 }
+
+async function requestPermissionAndSaveToken(uid) {
+    try {
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+            const token = await getToken(messaging, {
+                vapidKey: "BG5t51LWlghJOAbkclP68VNMCbtFdzHF3NVtBM2k2Kt0uf8uU3MEHx06xyWEDY2N6lXLIerm6-eVsL4J1NjPD_w"
+            });
+
+            if (token) {
+                console.log("📲 FCM Token:", token);
+                await addDoc(collection(db, "fcmTokens"), {
+                    uid,
+                    token,
+                    createdAt: new Date()
+                });
+            }
+        } else {
+            console.warn("❌ Użytkownik odrzucił pozwolenie na powiadomienia.");
+        }
+    } catch (err) {
+        console.error("Błąd pobierania tokena:", err);
+    }
+}
+
 
 
 window.addTaskBack = addTaskBack;
