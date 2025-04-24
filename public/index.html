@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do Application with Gamification</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <h1>To-Do Application</h1>
+        
+        <div id="user-info">
+            <span id="username">Witaj, Użytkowniku</span>
+            <span id="points-display">Punkty: 0</span>
+            <span id="level-display">Poziom: 1</span>
+            <span id="challenges-display">Wyzwania: 0</span>
+        </div>
+
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="Enter your task" required>
+            <button type="submit">Add Task</button>
+        </form>
+
+        <ul id="task-list"></ul>
+    </div>
+
+    <!-- Załaduj Firebase jako moduł -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+
+    <!-- Twój skrypt JS z kodem frontendowym -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
