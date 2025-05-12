@@ -12,6 +12,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.send('Witaj w aplikaji Node.js!');
   });
+app.use((req, res, next) => {
+  console.log('Incoming request:', req.method, req.url);
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.removeHeader("Cross-Origin-Opener-Policy");
+
+  next();
+});
 // Routes
 app.use('/api/tasks', taskRoutes);
 // Server start
@@ -19,9 +27,3 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-app.use((req, res, next) => {
-  console.log('Incoming request:', req.method, req.url);
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  next();
-});

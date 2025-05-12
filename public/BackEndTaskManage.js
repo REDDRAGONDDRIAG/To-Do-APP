@@ -1,83 +1,109 @@
-import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-import { db, auth, googleAuthProvider } from './Config.js';
-import { messaging } from './Config.js';
-import { getToken } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js";
-import { getRedirectResult, signInWithRedirect } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-
+import { collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { signInWithPopup, signOut, getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import { db, auth, googleAuthProvider, messaging } from './Config.js';
+import { getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js";
 
 let currentUser = null;
 
-// async function signIn() {
-//     try {
-//         const result = await signInWithPopup(auth, googleAuthProvider);
-//         currentUser = result.user;
-//         await requestPermissionAndSaveToken(currentUser.uid);
-//         console.log("Signed in as:", currentUser.displayName);
-//         fetchTasks();
-//     } catch (error) {
-//         console.error("Authentication failed:", error);
-//     }
-// }
 async function signIn() {
     try {
         const result = await signInWithPopup(auth, googleAuthProvider);
         currentUser = result.user;
-        await requestPermissionAndSaveToken(currentUser.uid);
-        console.log("Signed in as:", currentUser.displayName);
+        console.log("✅ Signed in as:", currentUser.displayName);
+
         fetchTasks();
+
+        showNotificationModal(); 
+
     } catch (error) {
-        console.error("Authentication failed:", error);
-        alert('Nie udało się zalogować. Spróbuj ponownie!');
+        console.error("❌ Authentication failed:", error);
     }
 }
 
-async function handleRedirectResult() {
+function showNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    modal.style.display = 'block';
+
+    document.getElementById('allowNotificationsBtn').onclick = () => {
+        console.log("👆 Kliknięto Zezwól");
+    
+        modal.style.display = 'none';
+    
+        Notification.requestPermission().then(permission => {
+            console.log("📩 Wynik requestPermission:", permission);
+    
+            if (permission === 'granted') {
+                requestFcmToken();
+                console.warn('Użytkownik wydał zgodę na powiadomienia');
+            } else {
+                console.warn('⚠️ Użytkownik nie zezwolił na powiadomienia.');
+            }
+        });
+    };
+    
+    document.getElementById('denyNotificationsBtn').onclick = () => {
+        modal.style.display = 'none';
+        console.log("❌ Użytkownik nie wyraził zgody na powiadomienia.");
+    };
+}
+
+async function requestFcmToken() {
     try {
-        const result = await getRedirectResult(auth);
+        const currentToken = await getToken(messaging, {
+            vapidKey: "BG5t51LWlghJOAbkclP68VNMCbtFdzHF3NVtBM2k2Kt0uf8uU3MEHx06xyWEDY2N6lXLIerm6-eVsL4J1NjPD_w"
+        });
 
-        if (result) {
-            currentUser = result.user;
-            console.log("Signed in as:", currentUser.displayName);
-            
-            await requestPermissionAndSaveToken(currentUser.uid);
-            
-            fetchTasks();
+        if (currentToken) {
+            await setDoc(doc(db, "fcmTokens", currentUser.uid), {
+                token: currentToken,
+                timestamp: new Date()
+            });
+
+            console.log("📩 FCM token zapisany w bazie.");
         } else {
-            console.log("Nie znaleziono wyników logowania.");
+            console.warn('⚠️ Brak tokenu FCM.');
         }
-    } catch (error) {
-        console.error("Błąd podczas logowania po przekierowaniu:", error);
+    } catch (err) {
+        console.error('❌ Błąd przy pobieraniu tokena FCM:', err);
     }
 }
 
-handleRedirectResult();
+async function signOutUser() {
+    try {
+        await signOut(auth);
+        currentUser = null;
+        taskList.innerHTML = '';
+        console.log("✅ Signed out successfully.");
+    } catch (error) {
+        console.error("❌ Sign out failed:", error);
+    }
+}
 
+function showLoginRequiredMessage() {
+    const modal = document.getElementById('loginRequiredModal');
+    modal.style.display = 'block';
+
+    document.getElementById('loginRequiredBtn').onclick = () => {
+        signIn();
+        modal.style.display = 'none';
+    };
+}
+
+const taskInput = document.getElementById('taskInput');
+const prioritySelect = document.getElementById('prioritySelect');
+const taskDate = document.getElementById('taskDate');
 const taskList = document.getElementById('taskList');
-
 const tasksCollection = collection(db, "tasks");
 
 async function addTaskBack() {
     if (!currentUser) {
-        alert("Please sign in first. Or your new Task won't be saved online!");
+        showLoginRequiredMessage();
         return;
     }
 
-    const taskInput = document.getElementById('taskInput');
-    console.log(taskInput);
-    const prioritySelect = document.getElementById('prioritySelect');
-    console.log(prioritySelect);
-    const taskDate = document.getElementById('taskDate');
-    console.log(taskDate);
-
     const taskText = taskInput.value.trim();
-    console.log(taskText);
     const taskPriority = parseInt(prioritySelect.value);
-    console.log(taskPriority);
     const taskDueDate = taskDate.value;
-    console.log(taskDueDate);
-
-    console.warn("sdss");
 
     if (!taskText) return alert('Please enter a task.');
     if (!taskDueDate) return alert('Please select a date.');
@@ -87,13 +113,13 @@ async function addTaskBack() {
             text: taskText,
             priority: taskPriority,
             dueDate: taskDueDate,
-            userId: currentUser.uid // 🔐 add user ID to match your rules
+            userId: currentUser.uid
         });
         taskInput.value = '';
         taskDate.value = '';
         fetchTasks();
     } catch (error) {
-        console.error("Error adding task:", error);
+        console.error("❌ Error adding task:", error);
     }
 }
 
@@ -102,7 +128,7 @@ async function deleteTaskBack(id) {
         await deleteDoc(doc(db, "tasks", id));
         fetchTasks();
     } catch (error) {
-        console.error("Error deleting task:", error);
+        console.error("❌ Error deleting task:", error);
     }
 }
 
@@ -134,33 +160,33 @@ async function fetchTasks() {
     });
 }
 
-async function requestPermissionAndSaveToken(uid) {
-    try {
-        const permission = await Notification.requestPermission();
-
-        if (permission === "granted") {
-            const token = await getToken(messaging, {
-                vapidKey: "BG5t51LWlghJOAbkclP68VNMCbtFdzHF3NVtBM2k2Kt0uf8uU3MEHx06xyWEDY2N6lXLIerm6-eVsL4J1NjPD_w"
-            });
-
-            if (token) {
-                console.log("📲 FCM Token:", token);
-                await addDoc(collection(db, "fcmTokens"), {
-                    uid,
-                    token,
-                    createdAt: new Date()
-                });
-            }
-        } else {
-            console.warn("❌ Użytkownik odrzucił pozwolenie na powiadomienia.");
-        }
-    } catch (err) {
-        console.error("Błąd pobierania tokena:", err);
-    }
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(reg => {
+            console.log("✅ Service Worker zarejestrowany:", reg);
+        })
+        .catch(err => console.error("❌ Błąd Service Workera:", err));
 }
 
+onMessage(messaging, (payload) => {
+    console.log("🔔 Powiadomienie (foreground):", payload);
+    showAppNotification(payload.notification.title, payload.notification.body);
+});
 
+function showAppNotification(title, body) {
+    const notificationDiv = document.createElement('div');
+    notificationDiv.classList.add('app-notification');
+    notificationDiv.innerHTML = `
+        <strong>${title}</strong>: ${body}
+        <button onclick="this.parentElement.remove()">X</button>
+    `;
+    document.body.appendChild(notificationDiv);
+}
 
 window.addTaskBack = addTaskBack;
 window.deleteTaskBack = deleteTaskBack;
 window.signIn = signIn;
+window.signOut = signOutUser;
+window.requestFcmToken = requestFcmToken;
+window.showNotificationModal = showNotificationModal;
+window.showLoginRequiredMessage = showLoginRequiredMessage;
