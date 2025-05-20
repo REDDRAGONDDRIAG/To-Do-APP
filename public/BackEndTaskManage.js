@@ -111,21 +111,21 @@ async function addTaskBack() {
     if (!taskText) return alert('Please enter a task.');
     if (!taskDueDate) return alert('Please select a date.');
 
+    // try {
+    //     await addDoc(tasksCollection, {
+    //         text: taskText,
+    //         priority: taskPriority,
+    //         dueDate: taskDueDate,
+    //         userId: currentUser.uid
+    //     });
+
     try {
-        await addDoc(tasksCollection, {
+        await addEventToCalendar({
             text: taskText,
             priority: taskPriority,
             dueDate: taskDueDate,
             userId: currentUser.uid
-        });
-
-        try {
-            await addEventToCalendar({
-                text: taskText,
-                priority: taskPriority,
-                dueDate: taskDueDate,
-                userId: currentUser.uid
-            });
+    });
             console.log('Task successfully added to Google Calendar');
         } catch (calendarError) {
             console.error('Error adding to Google Calendar:', calendarError);
@@ -135,10 +135,7 @@ async function addTaskBack() {
         taskInput.value = '';
         taskDate.value = '';
         fetchTasks();
-    } catch (error) {
-        console.error("❌ Error adding task:", error);
     }
-}
 
 async function deleteTaskBack(id) {
     try {
