@@ -13,8 +13,14 @@ const firebaseConfig = {
   measurementId: "G-GKYH0GPTXW"
 };
 
-const app = initializeApp(firebaseConfig);
+export const googleApiConfig = {
+  apiKey: 'AIzaSyD3La22SUaYz8sSbU_9_bAIoqgnbSSVdgQ',
+  clientId: '143686676735-lrl09teodhigadr4m7m3k7klaabb0ndf.apps.googleusercontent.com',
+  discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+  scope: 'https://www.googleapis.com/auth/calendar'
+};
 
+const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleAuthProvider = new GoogleAuthProvider(); 
 export const db = getFirestore(app)

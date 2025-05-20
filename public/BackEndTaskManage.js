@@ -2,6 +2,7 @@ import { collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www
 import { signInWithPopup, signOut, getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 import { db, auth, googleAuthProvider, messaging } from './Config.js';
 import { getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js";
+import { addEventToCalendar } from './GoogleCalendar.js';
 
 let currentUser = null;
 
@@ -9,6 +10,7 @@ async function signIn() {
     try {
         const result = await signInWithPopup(auth, googleAuthProvider);
         currentUser = result.user;
+
         console.log("✅ Signed in as:", currentUser.displayName);
 
         fetchTasks();
@@ -97,6 +99,7 @@ const tasksCollection = collection(db, "tasks");
 
 async function addTaskBack() {
     if (!currentUser) {
+        alert("Please sign in first. Or your new Task won't be saved online!");
         showLoginRequiredMessage();
         return;
     }
@@ -115,6 +118,20 @@ async function addTaskBack() {
             dueDate: taskDueDate,
             userId: currentUser.uid
         });
+
+        try {
+            await addEventToCalendar({
+                text: taskText,
+                priority: taskPriority,
+                dueDate: taskDueDate,
+                userId: currentUser.uid
+            });
+            console.log('Task successfully added to Google Calendar');
+        } catch (calendarError) {
+            console.error('Error adding to Google Calendar:', calendarError);
+            alert('Task was saved but failed to add to Google Calendar. Please check your calendar permissions.');
+        }
+
         taskInput.value = '';
         taskDate.value = '';
         fetchTasks();
@@ -128,7 +145,9 @@ async function deleteTaskBack(id) {
         await deleteDoc(doc(db, "tasks", id));
         fetchTasks();
     } catch (error) {
+      
         console.error("❌ Error deleting task:", error);
+      
     }
 }
 
@@ -159,6 +178,13 @@ async function fetchTasks() {
         taskList.appendChild(li);
     });
 }
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        currentUser = user;
+        fetchTasks();
+    }
+});
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
