@@ -13,6 +13,7 @@
 <body class="dark-theme">
   <div class="container dark-theme">
     <h1>To-Do Application</h1>
+    <button id="signin-btn" onclick="signIn()">Sign In</button>
     <div id="g-signin-info" style="display: none; margin-bottom: 15px;">
       <span id="user-name"></span>
       <button onclick="signOut()">Sign Out</button>
@@ -39,7 +40,6 @@
   <script type="module" src="BackEndTaskManage.js"></script>
 
   <script>
-    // Global sign out function
     async function signOut() {
       try {
         const auth = (await import('./Config.js')).auth;
@@ -52,7 +52,6 @@
       }
     }
 
-    // Update UI based on auth state
     function updateAuthUI(user) {
       const signinInfo = document.getElementById('g-signin-info');
       const signinBtn = document.getElementById('signin-btn');
@@ -67,7 +66,6 @@
       }
     }
 
-    // Initialize auth state listener
     (async function() {
       const { auth } = await import('./Config.js');
       auth.onAuthStateChanged((user) => {
@@ -75,8 +73,6 @@
       });
     })();
   </script>
-    <button id="signin-btn" onclick="signIn()">Sign In</button>
-    <button onclick="signOut()">Sign Out</button>
   </div>
   <div id="notificationModal" class="modal">
     <div class="modal-content">
@@ -86,10 +82,6 @@
         <button id="denyNotificationsBtn">Nie teraz</button>
     </div>
   </div>
-  <script src="changeTheme.js"></script>
-  <script type="module" src="FrontEndTaskManage.js"></script>
-  <script type="module" src="BackEndTaskManage.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
