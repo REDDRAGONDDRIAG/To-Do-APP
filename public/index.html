@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <title>To-Do Application with Calendar</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -21,10 +23,32 @@
     <button onclick="addTaskBack(), addTaskFront()">Add Task</button>
     <ul id="taskList"></ul>
     <button id="theme-toggle" onclick="changeTheme()">Change Theme</button>
-    <button onclick="signIn()">SignIn</button>
+    <button onclick="signIn()">Sign In</button>
+    <button onclick="signOut()">Sign Out</button>
+  </div>
+  <div id="notificationModal" class="modal">
+    <div class="modal-content">
+        <h2>Powiadomienia</h2>
+        <p>Czy chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
+        <button id="allowNotificationsBtn">Zezwól</button>
+        <button id="denyNotificationsBtn">Nie teraz</button>
+    </div>
   </div>
   <script src="changeTheme.js"></script>
   <script type="module" src="FrontEndTaskManage.js"></script>
   <script type="module" src="BackEndTaskManage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log("✅ Service Worker zarejestrowany:", registration);
+        })
+        .catch(err => {
+          console.error("❌ Błąd rejestracji Service Workera:", err);
+        });
+    }
+  </script>
+  
 </body>
 </html>
