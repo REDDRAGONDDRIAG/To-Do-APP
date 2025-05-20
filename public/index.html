@@ -22,18 +22,19 @@
     <input type="date" id="taskDate">
     <button onclick="addTaskBack(), addTaskFront()">Add Task</button>
     <ul id="taskList"></ul>
-    <button id="theme-toggle">Zmień motyw</button>
+    <button id="theme-toggle" onclick="changeTheme()">Change Theme</button>
     <button onclick="signIn()">Sign In</button>
     <button onclick="signOut()">Sign Out</button>
   </div>
   <div id="notificationModal" class="modal">
     <div class="modal-content">
         <h2>Powiadomienia</h2>
-        <p>Chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
+        <p>Czy chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
         <button id="allowNotificationsBtn">Zezwól</button>
         <button id="denyNotificationsBtn">Nie teraz</button>
     </div>
   </div>
+  <script src="changeTheme.js"></script>
   <script type="module" src="FrontEndTaskManage.js"></script>
   <script type="module" src="BackEndTaskManage.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js"></script>
