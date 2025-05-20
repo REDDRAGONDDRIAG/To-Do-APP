@@ -3,92 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <title>To-Do Application with Calendar</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #333;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .container {
-      background-color: #222;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-      width: 400px;
-      text-align: center;
-    }
-
-    .container h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-
-    input[type="text"], select, input[type="date"] {
-      width: calc(100% - 22px);
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: #007bff;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      background-color: #444;
-      margin: 5px 0;
-      padding: 10px;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .priority-p1 { border-left: 5px solid #ff4c4c; }
-    .priority-p2 { border-left: 5px solid #ff924c; }
-    .priority-p3 { border-left: 5px solid #ffcc4c; }
-    .priority-p4 { border-left: 5px solid #94ff4c; }
-    .priority-p5 { border-left: 5px solid #4cff4c; }
-
-    .delete-btn {
-      background-color: #ff4c4c;
-      color: #fff;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .delete-btn:hover {
-      background-color: #b30000;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
 </head>
-<body>
-  <div class="container">
+<body class="dark-theme">
+  <div class="container dark-theme">
     <h1>To-Do Application</h1>
+    <button id="signin-btn" onclick="signIn()">Sign In</button>
+    <div id="g-signin-info" style="display: none; margin-bottom: 15px;">
+      <span id="user-name"></span>
+      <button onclick="signOut()">Sign Out</button>
+    </div>
     <input type="text" id="taskInput" placeholder="Enter your task">
     <select id="prioritySelect">
       <option value="1">P1 (Highest Priority)</option>
@@ -98,72 +27,72 @@
       <option value="5">P5 (Lowest Priority)</option>
     </select>
     <input type="date" id="taskDate">
-    <button onclick="addTask()">Add Task</button>
+    <button onclick="addTaskBack(), addTaskFront()">Add Task</button>
     <ul id="taskList"></ul>
+    <button id="theme-toggle" onclick="changeTheme()">Change Theme</button>
+    <div id="calendar-status" style="margin-top: 15px; font-size: 0.9em;"></div>
   </div>
 
+  <script src="changeTheme.js"></script>
+  <script type="module" src="Config.js"></script>
+  <script type="module" src="GoogleCalendar.js"></script>
+  <script type="module" src="FrontEndTaskManage.js"></script>
+  <script type="module" src="BackEndTaskManage.js"></script>
+
   <script>
-    const tasks = [];
-
-    function addTask() {
-      const taskInput = document.getElementById('taskInput');
-      const prioritySelect = document.getElementById('prioritySelect');
-      const taskDate = document.getElementById('taskDate');
-      const taskList = document.getElementById('taskList');
-
-      const taskText = taskInput.value.trim();
-      const taskPriority = prioritySelect.value;
-      const taskDueDate = taskDate.value;
-
-      if (!taskText) {
-        alert('Please enter a task.');
-        return;
+    async function signOut() {
+      try {
+        const auth = (await import('./Config.js')).auth;
+        await auth.signOut();
+        document.getElementById('g-signin-info').style.display = 'none';
+        document.getElementById('signin-btn').style.display = 'block';
+        document.getElementById('taskList').innerHTML = '';
+      } catch (error) {
+        console.error("Sign out error:", error);
       }
-
-      if (!taskDueDate) {
-        alert('Please select a date.');
-        return;
-      }
-
-      // Add the new task to the tasks array
-      tasks.push({ text: taskText, priority: parseInt(taskPriority), dueDate: taskDueDate });
-
-      // Sort tasks by priority and date
-      tasks.sort((a, b) => {
-        if (a.dueDate === b.dueDate) {
-          return a.priority - b.priority;
-        }
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-
-      // Clear input field
-      taskInput.value = '';
-      taskDate.value = '';
-
-      // Render tasks
-      renderTasks(taskList);
     }
 
-    function deleteTask(index) {
-      tasks.splice(index, 1); // Remove the task at the specified index
-      renderTasks(document.getElementById('taskList')); // Re-render the task list
+    function updateAuthUI(user) {
+      const signinInfo = document.getElementById('g-signin-info');
+      const signinBtn = document.getElementById('signin-btn');
+      
+      if (user) {
+        document.getElementById('user-name').textContent = `Welcome, ${user.displayName}`;
+        signinInfo.style.display = 'block';
+        signinBtn.style.display = 'none';
+      } else {
+        signinInfo.style.display = 'none';
+        signinBtn.style.display = 'block';
+      }
     }
 
-    function renderTasks(taskList) {
-      // Clear the existing tasks
-      taskList.innerHTML = '';
-
-      // Add sorted tasks to the list
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.className = `priority-p${task.priority}`;
-        li.innerHTML = `
-          ${task.text} (P${task.priority}) - ${task.dueDate}
-          <button class="delete-btn" onclick="deleteTask(${index})">Delete</button>
-        `;
-        taskList.appendChild(li);
+    (async function() {
+      const { auth } = await import('./Config.js');
+      auth.onAuthStateChanged((user) => {
+        updateAuthUI(user);
       });
+    })();
+  </script>
+  </div>
+  <div id="notificationModal" class="modal">
+    <div class="modal-content">
+        <h2>Powiadomienia</h2>
+        <p>Czy chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
+        <button id="allowNotificationsBtn">Zezwól</button>
+        <button id="denyNotificationsBtn">Nie teraz</button>
+    </div>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log("✅ Service Worker zarejestrowany:", registration);
+        })
+        .catch(err => {
+          console.error("❌ Błąd rejestracji Service Workera:", err);
+        });
     }
   </script>
+  
 </body>
 </html>
