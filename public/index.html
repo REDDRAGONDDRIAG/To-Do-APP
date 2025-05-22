@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>To-Do Application with Gamification</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-  <title>To-Do Application with Calendar</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client"></script>
@@ -13,26 +13,54 @@
 <body class="dark-theme">
   <div class="container dark-theme">
     <h1>To-Do Application</h1>
+
+    <!-- Gamification UI -->
+    <div id="scoreboard">Score: <span id="score">0</span></div>
+    <div id="xp-bar-container">
+      <div id="xp-bar"></div>
+    </div>
+    <div id="level-display">Level: <span id="level">1</span></div>
+
+    <!-- Google Auth -->
     <button id="signin-btn" onclick="signIn()">Sign In</button>
     <div id="g-signin-info" style="display: none; margin-bottom: 15px;">
       <span id="user-name"></span>
       <button onclick="signOut()">Sign Out</button>
     </div>
+
+    <!-- Task Input -->
     <input type="text" id="taskInput" placeholder="Enter your task">
     <select id="prioritySelect">
-      <option value="1">P1 (Highest Priority)</option>
-      <option value="2">P2</option>
-      <option value="3">P3</option>
-      <option value="4">P4</option>
-      <option value="5">P5 (Lowest Priority)</option>
+      <option value="p1">P1 (Highest)</option>
+      <option value="p2">P2</option>
+      <option value="p3" selected>P3</option>
+      <option value="p4">P4</option>
+      <option value="p5">P5 (Lowest)</option>
     </select>
     <input type="date" id="taskDate">
-    <button onclick="addTaskBack(), addTaskFront()">Add Task</button>
+    <button onclick="addTaskBack(); addTaskFront();">Add Task</button>
+
+    <!-- Task List -->
     <ul id="taskList"></ul>
+
+    <!-- Theme Switch -->
     <button id="theme-toggle" onclick="changeTheme()">Change Theme</button>
+
+    <!-- Calendar Status -->
     <div id="calendar-status" style="margin-top: 15px; font-size: 0.9em;"></div>
   </div>
 
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="modal">
+    <div class="modal-content">
+      <h2>Powiadomienia</h2>
+      <p>Czy chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
+      <button id="allowNotificationsBtn">Zezwól</button>
+      <button id="denyNotificationsBtn">Nie teraz</button>
+    </div>
+  </div>
+
+  <!-- JS Modules & Logic -->
   <script src="changeTheme.js"></script>
   <script type="module" src="Config.js"></script>
   <script type="module" src="GoogleCalendar.js"></script>
@@ -40,59 +68,41 @@
   <script type="module" src="BackEndTaskManage.js"></script>
 
   <script>
+    // Sign out
     async function signOut() {
-      try {
-        const auth = (await import('./Config.js')).auth;
-        await auth.signOut();
-        document.getElementById('g-signin-info').style.display = 'none';
-        document.getElementById('signin-btn').style.display = 'block';
-        document.getElementById('taskList').innerHTML = '';
-      } catch (error) {
-        console.error("Sign out error:", error);
-      }
+      const { auth } = await import('./Config.js');
+      await auth.signOut();
+      document.getElementById('g-signin-info').style.display = 'none';
+      document.getElementById('signin-btn').style.display = 'block';
+      document.getElementById('taskList').innerHTML = '';
     }
 
+    // Update UI when signed in
     function updateAuthUI(user) {
-      const signinInfo = document.getElementById('g-signin-info');
-      const signinBtn = document.getElementById('signin-btn');
-      
+      const info = document.getElementById('g-signin-info');
+      const btn  = document.getElementById('signin-btn');
       if (user) {
         document.getElementById('user-name').textContent = `Welcome, ${user.displayName}`;
-        signinInfo.style.display = 'block';
-        signinBtn.style.display = 'none';
+        info.style.display = 'block';
+        btn.style.display = 'none';
       } else {
-        signinInfo.style.display = 'none';
-        signinBtn.style.display = 'block';
+        info.style.display = 'none';
+        btn.style.display = 'block';
       }
     }
 
-    (async function() {
+    // Auth state observer
+    (async () => {
       const { auth } = await import('./Config.js');
-      auth.onAuthStateChanged((user) => {
-        updateAuthUI(user);
-      });
+      auth.onAuthStateChanged(updateAuthUI);
     })();
-  </script>
-  </div>
-  <div id="notificationModal" class="modal">
-    <div class="modal-content">
-        <h2>Powiadomienia</h2>
-        <p>Czy chcesz otrzymywać powiadomienia z naszej aplikacji?</p>
-        <button id="allowNotificationsBtn">Zezwól</button>
-        <button id="denyNotificationsBtn">Nie teraz</button>
-    </div>
-  </div>
-  <script>
+
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(registration => {
-          console.log("✅ Service Worker zarejestrowany:", registration);
-        })
-        .catch(err => {
-          console.error("❌ Błąd rejestracji Service Workera:", err);
-        });
+        .then(r => console.log("SW registered", r))
+        .catch(e => console.error("SW error", e));
     }
   </script>
-  
 </body>
 </html>
