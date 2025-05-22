@@ -1,4 +1,4 @@
-const db = require('../db');
+const Task = require('../models/taskModel');
 const { initializeApp } = require('firebase/app');
 const { getFirestore, doc, updateDoc } = require('firebase/firestore');
 
@@ -14,80 +14,75 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const dbFire = getFirestore(app);
 
-const getAllTasks = async () => {
+const getTasks = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM tasks');
-    return rows;
+    const tasks = await Task.getAllTasks();
+    res.json(tasks);
   } catch (error) {
-    throw new Error(`Failed to fetch tasks: ${error.message}`);
+    console.error('Error fetching tasks:', error.message);
+    res.status(500).json({ error: 'Failed to fetch tasks', details: error.message });
   }
 };
 
-const createTask = async (name, priority = 'p5') => {
+const addTask = async (req, res) => {
   try {
+    const { name } = req.body;
     if (!name || typeof name !== 'string' || name.trim() === '') {
-      throw new Error('Task name is required and cannot be empty');
+      return res.status(400).json({ error: 'Task name is required and cannot be empty' });
     }
-    const [result] = await db.query(
-      'INSERT INTO tasks (name, priority, completed) VALUES (?, ?, ?)',
-      [name, priority, false]
-    );
-    const userId = 'guest'; // Zastąp dynamicznym userId po dodaniu uwierzytelnienia
+    const newTask = await Task.createTask(name);
+    const userId = req.user?.id || 'guest'; // Tymczasowy fallback
     await updateDoc(doc(dbFire, "users", userId), { score: firebase.firestore.FieldValue.increment(5) });
-    return { id: result.insertId, name, priority, completed: false };
+    res.status(201).json(newTask);
   } catch (error) {
-    throw new Error(`Failed to create task: ${error.message}`);
+    console.error('Error adding task:', error.message);
+    res.status(500).json({ error: 'Failed to add task', details: error.message });
   }
 };
 
-const updateTask = async (id, name, completed, priority) => {
+const updateTask = async (req, res) => {
   try {
+    const { id } = req.params;
+    const { name, completed } = req.body;
     if (!id || isNaN(parseInt(id))) {
-      throw new Error('Invalid task ID');
+      return res.status(400).json({ error: 'Invalid task ID' });
     }
     if (completed !== undefined && typeof completed !== 'boolean') {
-      throw new Error('Completed must be a boolean');
+      return res.status(400).json({ error: 'Completed must be a boolean' });
     }
-    const [result] = await db.query(
-      'UPDATE tasks SET name = ?, completed = ?, priority = ? WHERE id = ?',
-      [name, completed, priority, id]
-    );
-    if (result.affectedRows === 0) {
-      throw new Error('Task not found');
-    }
+    const updatedTask = await Task.updateTask(id, name, completed);
     if (completed) {
-      const userId = 'guest'; // Zastąp dynamicznym userId
-      const points = getPointsForPriority(priority.toLowerCase());
+      const userId = req.user?.id || 'guest';
+      const priority = updatedTask.priority || 'p5'; // Domyślna wartość, jeśli nie ma priorytetu
+      const points = getPointsForPriority(priority.toLowerCase()); // Funkcja z frontendu
       await updateDoc(doc(dbFire, "users", userId), { score: firebase.firestore.FieldValue.increment(points) });
     }
-    const [rows] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
-    return rows[0];
+    res.json(updatedTask);
   } catch (error) {
-    throw new Error(`Failed to update task: ${error.message}`);
+    console.error('Error updating task:', error.message);
+    res.status(500).json({ error: 'Failed to update task', details: error.message });
   }
 };
 
-const deleteTask = async (id) => {
+const deleteTask = async (req, res) => {
   try {
+    const { id } = req.params;
     if (!id || isNaN(parseInt(id))) {
-      throw new Error('Invalid task ID');
+      return res.status(400).json({ error: 'Invalid task ID' });
     }
-    const [rows] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
-    if (rows.length === 0) {
-      throw new Error('Task not found');
-    }
-    const { priority } = rows[0];
-    await db.query('DELETE FROM tasks WHERE id = ?', [id]);
-    const userId = 'guest'; // Zastąp dynamicznym userId
-    const points = getPointsForPriority(priority.toLowerCase());
+    const deletedTask = await Task.deleteTask(id);
+    const userId = req.user?.id || 'guest';
+    const priority = deletedTask.priority || 'p5'; // Domyślna wartość
+    const points = getPointsForPriority(priority.toLowerCase()); // Funkcja z frontendu
     await updateDoc(doc(dbFire, "users", userId), { score: firebase.firestore.FieldValue.increment(points) });
-    return { id, ...rows[0] };
+    res.json(deletedTask);
   } catch (error) {
-    throw new Error(`Failed to delete task: ${error.message}`);
+    console.error('Error deleting task:', error.message);
+    res.status(500).json({ error: 'Failed to delete task', details: error.message });
   }
 };
 
-// Funkcja punktacji
+// Funkcja punktacji (przeniesiona z frontendu)
 function getPointsForPriority(priority) {
   switch (priority) {
     case 'p1': return 15;
@@ -99,4 +94,4 @@ function getPointsForPriority(priority) {
   }
 }
 
-module.exports = { getAllTasks, createTask, updateTask, deleteTask };
+module.exports = { getTasks, addTask, updateTask, deleteTask };
